@@ -1,0 +1,28 @@
+Enter the File Name : E 
+T 
+X 
+Y 
+j==prodT
+isepsilonX
+isepsilonY
+j==prodE
+E 0
+T 0
+X 1
+Y 1
+List of terminals are : 
+1)	(
+2)	)
+3)	*
+4)	+
+5)	int
+List of non-terminals are : 
+1)	E
+2)	T
+3)	X
+4)	Y
+Production Table is  : 
+E -> T.X | 
+T -> (.E.) | int.Y | 
+X -> +.E | @ | 
+Y -> *.T | @ | 

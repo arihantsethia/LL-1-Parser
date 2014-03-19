@@ -10,7 +10,6 @@ LLGrammar::LLGrammar(std::string filename){
 	std::string line,nonterminal;
 	std::ifstream in(filename.c_str());
 	while(getline(in,line)){
-		std::cout<<line<<std::endl;
 		std::string::size_type beginPos = line.find_first_not_of(" ");
 		if(beginPos!= std::string::npos){
 			std::string::size_type endPos = line.find("->",beginPos);
@@ -50,75 +49,67 @@ LLGrammar::~LLGrammar(){
  
 void LLGrammar::computeEpsilonSets(){
 
-	std::map<std::string,bool>	ischeck ;
-	
-	ischeck.clear()	  ;
-	eInFirsts.clear() ;
+	std::map<std::string,bool>	isChecked ;
+	std::vector<std::string> tokens;
+	bool flag1, flag2, isEpsilon ;
+	isChecked.clear();
+	eInFirsts.clear();
 	
 	for(int i=0 ; i<terminals.size() ; i++){
-		if(terminals[i]=="@"){
-			eInFirsts[terminals[i]] = true  ;
-		}	
-		else
-			eInFirsts[terminals[i]] = false ;
-		ischeck[terminals[i]]   = true  ;
+		eInFirsts[terminals[i]] = false;
+		isChecked[terminals[i]] = true;
 	}
 
 	for(int i=0 ; i<non_terminals.size() ; i++){
 		eInFirsts[non_terminals[i]] = false ;
-		ischeck[non_terminals[i]]   = false ;  
+		isChecked[non_terminals[i]] = false ;  
 	}
-
 	
-	bool isloop = true ;
-	while(isloop){
+	bool continueInLoop = true ;
+	while(continueInLoop){
 
-		for(int i=0; i<non_terminals.size() ;i++){
-			
-			if(!ischeck[non_terminals[i]]){
-				
-				bool find = true ;
-				int j ;
-				for(j=0 ; j< productions[non_terminals[i]].size() ; j++){
-
-					std::vector<std::string> tokens = tokenize(productions[non_terminals[i]][j],".") ;
-					
-					bool isepsilon = true ;
+		for(int i=0; i<non_terminals.size() ;i++){			
+			if(!isChecked[non_terminals[i]]){
+				flag1 = true ;
+				for(int j=0 ; j< productions[non_terminals[i]].size() ; j++){
+					tokens = tokenize(productions[non_terminals[i]][j],".") ;
+					flag2 = true ;
+					isEpsilon = true ;
 					for(int k=0	; k<tokens.size() ; k++){
-						if(!ischeck[tokens[k]]){
-							std::cout << "find = false" << non_terminals[i] <<std::endl ;
-							find = false ;
-							break	;
-						}else if(!eInFirsts[tokens[k]]){
-							isepsilon = false ;
+						if(tokens[k]!="@"){
+							if(!eInFirsts[tokens[k]])
+							{
+								isEpsilon = false ;
+								if(isChecked[tokens[k]]){
+									flag2 = false ;
+								}
+							}
 						}
 					}
-					if(!find){
-						break ;
-					}else if(isepsilon){
-						std::cout << "isepsilon" << non_terminals[i] <<std::endl ;
 
-						eInFirsts[non_terminals[i]] = true ;
-						ischeck[non_terminals[i]]   = true ;
-						break ;
+					if(!flag2 && flag1){
+						flag1 = true ;
+					}
+					else {
+						flag1 = false ;
 					}
 
+					if(isEpsilon){
+						eInFirsts[non_terminals[i]] = true ;
+						isChecked[non_terminals[i]]   = true ;
+						break ;
+					}
 				}
-
-				if(find && j==productions[non_terminals[i]].size()){
-					std::cout << "j==prod" << non_terminals[i] <<std::endl ;
+				if(flag1){
 					eInFirsts[non_terminals[i]] = false ;
-					ischeck[non_terminals[i]]   = true  ;
-				}
-
+					isChecked[non_terminals[i]]   = true  ;
+				}				
 			}
-		}
-
-
-		isloop = false ;
-		for(int i=0; i<non_terminals.size() ;i++){
-			if(!ischeck[non_terminals[i]]){
-				isloop = true ;
+			continueInLoop = false ;
+			for(int i=0; i<non_terminals.size() ;i++){
+				if(!isChecked[non_terminals[i]]){
+					continueInLoop = true ;
+				}
 			}
 		}
 	}
@@ -149,6 +140,8 @@ std::set<std::string> LLGrammar::getFollow(std::string symbol){
 }
 
 bool LLGrammar::containsEpsilon(std::string symbol){
+	if(symbol=="@")
+		return true ;
 	return eInFirsts[symbol] ;
 }
 

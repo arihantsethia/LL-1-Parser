@@ -1,7 +1,7 @@
 #include "headers/grammer.h"
 
 int main(){
-	
+
 	std::string filename;
 	std::cout<<"Enter the File Name : ";
 	std::cin>>filename;
