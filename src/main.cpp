@@ -1,10 +1,10 @@
-#include "headers/grammer.cpp"
+#include "headers/grammer.h"
 
 int main(){
 	std::string filename; 
 	std::cin>>filename;
 
-	LLGrammer grammer(filename);
-	
+	LLGrammar grammar(filename);
+
 	return 0;
 }

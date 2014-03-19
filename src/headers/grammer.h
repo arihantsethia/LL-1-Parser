@@ -21,24 +21,26 @@ class LLGrammar{
 private:
 	std::vector<std::string> terminals;
 	std::vector<std::string> non_terminals;
-	std::map<std::string, std::set > firstSets;
-	std::map<std::string, std::set > followSets;
+	std::map<std::string, std::set<std::string> > firstSets;
+	std::map<std::string, std::set<std::string> > followSets;
 	std::map<std::string, std::vector<std::string> > productions;
 	std::map<std::string, bool> eInFirsts;
+
+	std::vector<std::string> tokenize(std::string, std::string);
 
 	void computeEpsilonSets();
 	void computeFirst(std::string);
 	void computeFollow(std::string);
 
 public:
-	
+
 	LLGrammar();
-	LLGrammer(std::string);
+	LLGrammar(std::string);
 	~LLGrammar();
-	computeFirstSets();
-	computeFollowSets();
-	std::set getFirst(std::string);
-	std::set getFollow(std::string);
+	void computeFirstSets();
+	void computeFollowSets();
+	std::set<std::string> getFirst(std::string);
+	std::set<std::string> getFollow(std::string);
 	bool containsEpsilon(std::string);
 };
 

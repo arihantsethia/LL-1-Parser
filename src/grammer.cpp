@@ -1,45 +1,63 @@
 #include "headers/grammer.h"
 
-LLGrammer::LLGrammar(){
+LLGrammar::LLGrammar(){
 
 }
 
-LLGrammer::LLGrammer(std::string){
+LLGrammar::LLGrammar(std::string filename){
 
 }
 
-LLGrammer::~LLGrammar(){
+LLGrammar::~LLGrammar(){
+
+}
+ 
+void LLGrammar::computeEpsilonSets(){
 
 }
 
-void LLGrammer::computeEpsilonSets(){
+void LLGrammar::computeFirst(std::string symbol){
 
 }
 
-void LLGrammer::computeFirst(std::string){
+void LLGrammar::computeFollow(std::string symbol){
 
 }
 
-void LLGrammer::computeFollow(std::string){
+void LLGrammar::computeFirstSets(){
 
 }
 
-void LLGrammer::computeFirstSets(){
+void LLGrammar::computeFollowSets(){
 
 }
 
-void LLGrammer::computeFollowSets(){
+std::set<std::string> LLGrammar::getFirst(std::string symbol){
 
 }
 
-std::set LLGrammer::getFirst(std::string){
+std::set<std::string> LLGrammar::getFollow(std::string symbol){
 
 }
 
-std::set LLGrammer::getFollow(std::string){
-
+bool LLGrammar::containsEpsilon(std::string symbol){
+	
+	return true;
 }
 
-bool LLGrammer::containsEpsilon(std::string){
-
+// This function tokenizes the string on the basis of delimeters space or newline or cariage return.
+std::vector<std::string> tokenize(std::string s, std::string sep){
+	// Skip delimiters at beginning.
+	std::string::size_type lastPos = s.find_first_not_of(sep, 0);	
+	// Find first "non-delimiter", which will be between lastPos and pos
+	std::string::size_type pos = s.find_first_of(sep, lastPos); 
+	std::vector<std::string> tokens;
+	while(pos != std::string::npos || lastPos != std::string::npos){
+		tokens.push_back(s.substr(lastPos,(pos - lastPos)));
+		// Skip delimiters
+		lastPos = s.find_first_not_of(sep, pos);	
+		// Find "non-delimiter", which will be between lastPos and pos
+		pos = s.find_first_of(sep, lastPos); 
+	}
+	return tokens;
 }
