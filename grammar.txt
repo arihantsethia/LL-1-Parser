@@ -1,4 +1,0 @@
-S -> a.a.E|a.E|S.b
-D -> E.D.d|c.c|@
-Y -> D.E.D|d
-E -> a.E.D|@
