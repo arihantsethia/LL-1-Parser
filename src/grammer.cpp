@@ -16,7 +16,6 @@ LLGrammar::LLGrammar(std::string filename){
 			if( endPos != std::string::npos){
 				nonterminal = line.substr(beginPos,endPos-beginPos);
 				// To remove spaces from nonterminal if any.
-				std::cout<<nonterminal<<std::endl;
 				beginPos = nonterminal.find_first_of(" ",0);
 				if(beginPos != std::string::npos){
 					nonterminal = nonterminal.substr(0,beginPos);
@@ -49,7 +48,6 @@ LLGrammar::~LLGrammar(){
  
 void LLGrammar::computeEpsilonSets(){
 
-<<<<<<< HEAD
 	std::map<std::string,bool>	isChecked ;
 	std::vector<std::string> tokens;
 	bool flag1, flag2, isEpsilon ;
@@ -153,12 +151,17 @@ std::set<std::string> LLGrammar::computeFollow(std::string symbol){
 }
 
 void LLGrammar::computeFirstSets(){
+
+	computeEpsilonSets();
+
 	for(int i = 0; i<non_terminals.size(); i++){
+		firstSets[non_terminals[i]].clear();
 		firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
 	}
 
 	for(int i = 0; i<terminals.size(); i++){
 		firstSets[terminals[i]].clear();
+		firstSets[terminals[i]].insert(terminals[i]);
 	}
 
 	std::cout<<"First Set is  : "<<std::endl;
