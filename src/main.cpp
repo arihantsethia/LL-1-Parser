@@ -10,5 +10,6 @@ int main(){
 	grammar.getTerminals(true);
 	grammar.getNonTerminals(true);
 	grammar.getProductionTable(true);
+	grammar.computeFirstSets();
 	return 0;
 }

@@ -31,8 +31,8 @@ private:
 	std::vector<std::string> tokenize(std::string, std::string);
 
 	void computeEpsilonSets();
-	void computeFirst(std::string);
-	void computeFollow(std::string);
+	std::set<std::string> computeFirst(std::string);
+	std::set<std::string> computeFollow(std::string);
 
 public:
 
