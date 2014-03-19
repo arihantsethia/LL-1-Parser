@@ -20,7 +20,7 @@ LLGrammar::LLGrammar(std::string filename){
 				beginPos = nonterminal.find_first_of(" ",0);
 				if(beginPos != std::string::npos){
 					nonterminal = nonterminal.substr(0,beginPos);
-				}				
+				}
 				setNonTerminals.insert(nonterminal);
 				line = line.substr(endPos+2);
 				_productions = tokenize(line," |");
@@ -36,7 +36,7 @@ LLGrammar::LLGrammar(std::string filename){
 		}
 	}
 	std::copy(setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(non_terminals));
-	if(symbolsSet.find("@")!=symbolsSet.end()){		
+	if(symbolsSet.find("@")!=symbolsSet.end()){	
 		symbolsSet.erase(symbolsSet.find("@"));
 	}
 	std::set_difference (symbolsSet.begin(), symbolsSet.end(), setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(terminals));
@@ -49,6 +49,7 @@ LLGrammar::~LLGrammar(){
  
 void LLGrammar::computeEpsilonSets(){
 
+<<<<<<< HEAD
 	std::map<std::string,bool>	isChecked ;
 	std::vector<std::string> tokens;
 	bool flag1, flag2, isEpsilon ;
@@ -115,16 +116,61 @@ void LLGrammar::computeEpsilonSets(){
 	}
 }
 
-void LLGrammar::computeFirst(std::string symbol){
+std::set<std::string> LLGrammar::computeFirst(std::string symbol){
+	std::set<std::string> firstSet, anotherFirstSet;
+	std::vector<std::string> _symbols;
+	int flag=0;
 
+	if(containsEpsilon(symbol)){
+		firstSet.insert("@");
+	}
+
+	for(int i=0 ; i<productions[symbol].size(); i++){
+		std::vector<std::string> _symbols = tokenize(productions[symbol][i],".");
+		for(int j = 0; j<_symbols.size(); j++){
+			if(!(containsEpsilon(_symbols[j]))){
+				flag=1;
+				if(find(terminals.begin(), terminals.end(), _symbols[j]) != terminals.end()){
+					firstSet.insert(_symbols[j]);
+				}
+				else{
+					anotherFirstSet=computeFirst(_symbols[j]);
+					std::copy(anotherFirstSet.begin(), anotherFirstSet.end(), std::inserter(firstSet, firstSet.end()));
+				}
+				break;
+			}
+		}
+		if (flag==0){
+			firstSet.insert("@");
+		}
+	}
+
+	return firstSet;
 }
 
-void LLGrammar::computeFollow(std::string symbol){
+std::set<std::string> LLGrammar::computeFollow(std::string symbol){
 
 }
 
 void LLGrammar::computeFirstSets(){
+	for(int i = 0; i<non_terminals.size(); i++){
+		firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
+	}
 
+	for(int i = 0; i<terminals.size(); i++){
+		firstSets[terminals[i]].clear();
+	}
+
+	std::cout<<"First Set is  : "<<std::endl;
+	std::map<std::string, std::set<std::string> >::iterator it;
+	std::set<std::string>::iterator itSet;
+	for(it=firstSets.begin();it!=firstSets.end();it++){
+		std::cout<<(*it).first<<" -> ";
+		for(itSet=(*it).second.begin();itSet != (*it).second.end();itSet++){
+			std::cout<<(*itSet)<<" | ";
+		}
+		std::cout<<std::endl;
+	}
 }
 
 void LLGrammar::computeFollowSets(){
@@ -148,14 +194,14 @@ bool LLGrammar::containsEpsilon(std::string symbol){
 // This function tokenizes the string on the basis of delimeters space or newline or cariage return.
 std::vector<std::string> LLGrammar::tokenize(std::string s, std::string sep){
 	// Skip delimiters at beginning.
-	std::string::size_type lastPos = s.find_first_not_of(sep, 0);	
+	std::string::size_type lastPos = s.find_first_not_of(sep, 0);
 	// Find first "non-delimiter", which will be between lastPos and pos
 	std::string::size_type pos = s.find_first_of(sep, lastPos); 
 	std::vector<std::string> tokens;
 	while(pos != std::string::npos || lastPos != std::string::npos){
 		tokens.push_back(s.substr(lastPos,(pos - lastPos)));
 		// Skip delimiters
-		lastPos = s.find_first_not_of(sep, pos);	
+		lastPos = s.find_first_not_of(sep, pos);
 		// Find "non-delimiter", which will be between lastPos and pos
 		pos = s.find_first_of(sep, lastPos); 
 	}
@@ -192,7 +238,7 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 				std::cout<<(*it).second[i]<<" | ";
 			}
 			std::cout<<std::endl;
-		}		
+		}
 	}
 	return productions;
 }

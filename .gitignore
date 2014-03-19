@@ -12,4 +12,4 @@
 *.la
 *.a
 parser
-sampleinput.txt
+*.txt
