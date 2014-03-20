@@ -1,4 +1,4 @@
-#include "headers/grammer.h"
+#include "headers/grammar.h"
 
 int main(){
 

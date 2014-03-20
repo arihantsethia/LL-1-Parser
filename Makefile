@@ -1,25 +1,35 @@
-program_NAME := parser
-program_CXX_SRCS := $(wildcard src/*.cpp)
-program_CXX_OBJS := ${program_CXX_SRCS:.cpp=.o}
-program_OBJS := $(program_C_OBJS) $(program_CXX_OBJS)
+GRAMMAR_SOURCES = src/grammar_main.cpp src/grammar.cpp 
+PARSER_SOURCES = src/parser_main.cpp src/parser.cpp
+GRAMMAR_OBJECTS = $(GRAMMAR_SOURCES:.cpp=.o)
+PARSER_OBJECTS = $(PARSER_SOURCES:.cpp=.o)
+GRAMMAR_EXECUTABLE = grammarparser	
+PARSER_EXECUTABLE = parser
+
 program_INCLUDE_DIRS :=
 program_LIBRARY_DIRS :=
 program_LIBRARIES :=
 
+CC = g++
 CPPFLAGS += $(foreach includedir,$(program_INCLUDE_DIRS),-I$(includedir))
 LDFLAGS += $(foreach librarydir,$(program_LIBRARY_DIRS),-L$(librarydir))
 LDFLAGS += $(foreach library,$(program_LIBRARIES),-l$(library))
 
-.PHONY: all clean distclean
+.PHONY: all clean distclean grammar parser
 
-all: $(program_NAME)
+all: grammar_exectuable parser_exectuable
 
-$(program_NAME): $(program_OBJS)
-	$(LINK.cc) $(program_OBJS) -o $(program_NAME)
+grammar_exectuable: $(GRAMMAR_EXECUTABLE)
+
+parser_exectuable: $(PARSER_EXECUTABLE)
+
+$(GRAMMAR_EXECUTABLE): $(GRAMMAR_OBJECTS)
+	$(CC) $(GRAMMAR_OBJECTS) -o $(GRAMMAR_EXECUTABLE)
+
+$(PARSER_EXECUTABLE): $(PARSER_OBJECTS)
+	$(CC) $(PARSER_OBJECTS) -o $(PARSER_EXECUTABLE)
 
 clean:
-	@- $(RM) $(program_NAME)
-	@- $(RM) $(program_OBJS)
+	@- $(RM) $(GRAMMAR_EXECUTABLE) $(PARSER_EXECUTABLE)
+	@- $(RM) $(GRAMMAR_OBJECTS) $(PARSER_OBJECTS)
 
 distclean: clean
-
