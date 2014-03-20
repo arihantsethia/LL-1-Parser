@@ -23,7 +23,8 @@ class LLParser{
 private:
 	std::map< std::pair<std::string,std::string> , std::string > parseTable;
 	std::vector<std::string> tokens;
-
+	std::vector<std::string> terminals;
+	std::vector<std::string> nonTerminals;
 	void createParseTable();
 	std::vector<std::string> tokenize(std::string, std::string);
 
