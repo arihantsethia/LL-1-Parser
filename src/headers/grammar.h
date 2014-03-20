@@ -30,17 +30,19 @@ private:
 	std::map<std::string, bool> eInFirsts;
 
 	std::vector<std::string> tokenize(std::string, std::string);
-	void computeEpsilonSets();
 	std::set<std::string> computeFirst(std::string);
+	void computeEpsilonSets();	
 	void computeFollow(std::string,std::map<std::string, std::vector<std::string> >&);
+	bool removeLeftRecursion();
+	void leftFactor();
 
 public:
 
 	LLGrammar();
 	LLGrammar(std::string);
 	~LLGrammar();
-	void computeFirstSets();
-	void computeFollowSets();
+	void computeFirstSets(bool print=false);
+	void computeFollowSets(bool print=false);
 	std::set<std::string> getFirst(std::string);
 	std::set<std::string> getFollow(std::string);
 	bool containsEpsilon(std::string);

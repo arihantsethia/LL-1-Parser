@@ -47,6 +47,10 @@ LLGrammar::LLGrammar(std::string filename){
 	}
 	std::set_difference (symbolsSet.begin(), symbolsSet.end(), setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(terminals));
 	in.close();
+	
+	if(removeLeftRecursion()){
+		std::cout<<"Grammer contained left recursion, check the new production table to see the modified grammer with left recursion."<<std::endl;
+	}
 }
 
 LLGrammar::~LLGrammar(){
@@ -180,7 +184,7 @@ void LLGrammar::computeFollow(std::string symbol,std::map<std::string, std::vect
 	}
 }
 
-void LLGrammar::computeFirstSets(){
+void LLGrammar::computeFirstSets(bool print){
 
 	computeEpsilonSets();
 
@@ -195,19 +199,21 @@ void LLGrammar::computeFirstSets(){
 		firstSets[terminals[i]].insert(terminals[i]);
 	}
 	firstSets["@"].insert("@");
-	std::cout<<"First Set is  : "<<std::endl;
-	std::map<std::string, std::set<std::string> >::iterator it;
-	std::set<std::string>::iterator itSet;
-	for(it=firstSets.begin();it!=firstSets.end();it++){
-		std::cout<<(*it).first<<" -> ";
-		for(itSet=(*it).second.begin();itSet != (*it).second.end();itSet++){
-			std::cout<<(*itSet)<<" | ";
+	if(print){
+		std::cout<<"First Set is  : "<<std::endl;
+		std::map<std::string, std::set<std::string> >::iterator it;
+		std::set<std::string>::iterator itSet;
+		for(it=firstSets.begin();it!=firstSets.end();it++){
+			std::cout<<(*it).first<<"\t->\t";
+			for(itSet=(*it).second.begin();itSet != (*it).second.end();itSet++){
+				std::cout<<(*itSet)<<"\t|\t";
+			}
+			std::cout<<std::endl;
 		}
-		std::cout<<std::endl;
 	}
 }
 
-void LLGrammar::computeFollowSets(){
+void LLGrammar::computeFollowSets(bool print){
 	std::map<std::string, std::vector<std::string> > tempFollowSets;
 	std::map<std::string, std::vector<std::string> >::iterator it;
 	std::vector<std::string> tempVector, bfsVector;
@@ -264,17 +270,21 @@ void LLGrammar::computeFollowSets(){
 			}
 		}
 	}
-	std::cout<<"Follow Set is  : "<<std::endl;
+	if(print){
+		std::cout<<"Follow Set is  : "<<std::endl;
+	}
 	std::map<std::string, std::set<std::string> >::iterator itFollowSets;
 	for(itFollowSets=followSets.begin();itFollowSets!=followSets.end();itFollowSets++){
 		if((*itFollowSets).second.find("@")!=(*itFollowSets).second.end()){	
 			(*itFollowSets).second.erase((*itFollowSets).second.find("@"));
 		}
-		std::cout<<(*itFollowSets).first<<" -> ";
-		for(std::set<std::string>::iterator itSet=(*itFollowSets).second.begin();itSet != (*itFollowSets).second.end();itSet++){
-			std::cout<<(*itSet)<<" | ";
+		if(print){
+			std::cout<<(*itFollowSets).first<<"\t->\t";
+			for(std::set<std::string>::iterator itSet=(*itFollowSets).second.begin();itSet != (*itFollowSets).second.end();itSet++){
+				std::cout<<(*itSet)<<"\t|\t";
+			}
+			std::cout<<std::endl;
 		}
-		std::cout<<std::endl;
 	}
 }
 
@@ -304,15 +314,15 @@ std::vector<std::string> LLGrammar::tokenize(std::string s, std::string sep){
 	std::string::size_type lastPos = s.find_first_not_of(sep, 0);
 	// Find first "non-delimiter", which will be between lastPos and pos
 	std::string::size_type pos = s.find_first_of(sep, lastPos); 
-	std::vector<std::string> tokens;
+	std::vector<std::string> _tokens;
 	while(pos != std::string::npos || lastPos != std::string::npos){
-		tokens.push_back(s.substr(lastPos,(pos - lastPos)));
+		_tokens.push_back(s.substr(lastPos,(pos - lastPos)));
 		// Skip delimiters
 		lastPos = s.find_first_not_of(sep, pos);
 		// Find "non-delimiter", which will be between lastPos and pos
 		pos = s.find_first_of(sep, lastPos); 
 	}
-	return tokens;
+	return _tokens;
 }
 
 std::vector<std::string> LLGrammar::getTerminals(bool print){
@@ -340,9 +350,9 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 		std::cout<<"Production Table is  : "<<std::endl;
 		std::map<std::string, std::vector<std::string> >::iterator it;
 		for(it=productions.begin();it!=productions.end();it++){
-			std::cout<<(*it).first<<" -> ";
+			std::cout<<(*it).first<<"\t->\t";
 			for(int i=0;i<(*it).second.size();i++){
-				std::cout<<(*it).second[i]<<" | ";
+				std::cout<<(*it).second[i]<<"\t|\t";
 			}
 			std::cout<<std::endl;
 		}
@@ -412,4 +422,59 @@ void LLGrammar::parseTableConstruction(){
 		out << parseTable[tempPair] << "\t" << std::endl ;
 	}
 	out.close() ;
+}
+
+bool LLGrammar::removeLeftRecursion(){
+	bool leftRecursion, containsLeftRecursion = false;
+	std::string::size_type pos;
+	std::string startTokenSymbol,restOfProduction;
+	std::map<std::string, std::vector<std::string> > _productions = productions;
+	//To remove indirect left recursion
+	for(int i=0;i<nonTerminals.size();i++){
+		for(int k=0;k<productions[nonTerminals[i]].size();k++){
+			pos = productions[nonTerminals[i]][k].find(".");
+			if(pos == std::string::npos){
+				startTokenSymbol = productions[nonTerminals[i]][k];
+				restOfProduction = "@";
+			}else{
+				startTokenSymbol = productions[nonTerminals[i]][k].substr(0,pos);
+				restOfProduction = productions[nonTerminals[i]][k].substr(pos+1);
+			}
+			for(int j=0; j<i; j++){				
+				if(startTokenSymbol == nonTerminals[j]){
+					for(int m=0;m<productions[nonTerminals[j]].size();m++){
+						productions[nonTerminals[i]].push_back(productions[nonTerminals[j]][m]+"."+restOfProduction);
+					}
+					productions[nonTerminals[i]].erase(productions[nonTerminals[i]].begin()+k);
+					break;
+				}
+			}
+		}
+		//To remove immediate left recursion
+		bool leftRecursion=false;
+		for(int k=0; k < productions[nonTerminals[i]].size(); k++){
+			std::string::size_type pos = productions[nonTerminals[i]][k].find(".");
+			if(pos == std::string::npos){
+				startTokenSymbol = productions[nonTerminals[i]][k];
+				restOfProduction = "@";
+			}else{
+				startTokenSymbol = productions[nonTerminals[i]][k].substr(0,pos);
+				restOfProduction = productions[nonTerminals[i]][k].substr(pos+1);
+			}
+			if(startTokenSymbol == nonTerminals[i]){
+				containsLeftRecursion = true;
+				leftRecursion = true;
+				productions[nonTerminals[i]+"'"].push_back(restOfProduction+"."+nonTerminals[i]+"'");
+				productions[nonTerminals[i]].erase(productions[nonTerminals[i]].begin()+k);
+			}
+		}
+		if(leftRecursion){
+			productions[nonTerminals[i]+"'"].push_back("@");
+			nonTerminals.push_back(nonTerminals[i]+"'");
+			for(int k=0; k < productions[nonTerminals[i]].size(); k++){
+				productions[nonTerminals[i]][k] = productions[nonTerminals[i]][k]+"."+nonTerminals[i]+"'";
+			}
+		}
+	}
+	return containsLeftRecursion;
 }
