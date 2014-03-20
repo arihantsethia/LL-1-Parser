@@ -7,7 +7,7 @@ LLGrammar::LLGrammar(){
 LLGrammar::LLGrammar(std::string filename){
 	firstSets.clear();
 	eInFirsts.clear();
-
+	startSymbol = "";
 	std::set<std::string> setTerminals,setNonTerminals,symbolsSet;
 	std::vector<std::string> _productions, _symbols;
 	std::string line,nonterminal;
@@ -22,6 +22,10 @@ LLGrammar::LLGrammar(std::string filename){
 				beginPos = nonterminal.find_first_of(" ",0);
 				if(beginPos != std::string::npos){
 					nonterminal = nonterminal.substr(0,beginPos);
+				}
+				// To store the starting symbol of the language.
+				if(setNonTerminals.empty()){
+					startSymbol = nonterminal;
 				}
 				setNonTerminals.insert(nonterminal);
 				line = line.substr(endPos+2);
@@ -128,11 +132,11 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 	}
 
 	for(int i=0 ; i<productions[symbol].size(); i++){
-		std::vector<std::string> _symbols = tokenize(productions[symbol][i],".");
+		_symbols = tokenize(productions[symbol][i],".");
 		for(int j = 0; j<_symbols.size(); j++){
 			if(!(containsEpsilon(_symbols[j]))){
 				flag=1;
-				if(find(terminals.begin(), terminals.end(), _symbols[j]) != terminals.end()){
+				if(find(terminals.begin(), terminals.end(),_symbols[j]) != terminals.end()){
 					firstSet.insert(_symbols[j]);
 				}
 				else{
@@ -150,8 +154,30 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 	return firstSet;
 }
 
-std::set<std::string> LLGrammar::computeFollow(std::string symbol){
+void LLGrammar::computeFollow(std::string symbol,std::map<std::string, std::vector<std::string> >& tempFollowSets ){
+//	std::set<std::string> followSet, anotherFollowSet;
+	std::vector<std::string> _symbols;
+	if(symbol == startSymbol){
+		followSets[symbol].insert("$");
+	}
 
+	for(int i=0;i<productions[symbol].size();i++){
+		_symbols = tokenize(productions[symbol][i],".");
+		for(int j=0; j< _symbols.size()-1;j++){
+			if(_symbols[j]!="@"){
+				tempFollowSets[_symbols[j]].push_back("FIRST_"+_symbols[j+1]);
+			}
+		}
+		for(int j=_symbols.size(); j>0;j--){
+			if(j==_symbols.size() || containsEpsilon(_symbols[j])){
+				if(_symbols[j-1]!="@"){
+					tempFollowSets[_symbols[j-1]].push_back("FOLLOW_"+symbol);
+				}
+			}else{
+				break;
+			}			
+		}
+	}
 }
 
 void LLGrammar::computeFirstSets(){
@@ -165,6 +191,7 @@ void LLGrammar::computeFirstSets(){
 	}
 
 	for(int i = 0; i<terminals.size(); i++){
+		firstSets[terminals[i]].clear();
 		firstSets[terminals[i]].insert(terminals[i]);
 	}
 
@@ -181,7 +208,47 @@ void LLGrammar::computeFirstSets(){
 }
 
 void LLGrammar::computeFollowSets(){
+	std::map<std::string, std::vector<std::string> > tempFollowSets;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	std::vector<std::string> tempVector;
+	std::string symbol; 
+	for(int i=0;i<non_terminals.size();i++){
+		computeFollow(non_terminals[i],tempFollowSets);
+	}
 
+	for(it=tempFollowSets.begin();it!=tempFollowSets.end();it++){
+		tempVector = (*it).second;
+		tempVector.erase(std::remove(tempVector.begin(), tempVector.end(), "@"), tempVector.end());
+	}
+
+	for(it = tempFollowSets.begin(); it!=tempFollowSets.end(); it++ ){
+		tempVector = (*it).second;
+		for(int i=0; i < tempVector.size(); i++){
+			if(tempVector[i].find("FIRST_") == 0 ){
+				symbol = tempVector[i].substr(6);
+				std::copy(firstSets[symbol].begin(), firstSets[symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
+			}else if ( tempVector[i].find("FOLLOW_") == 0 ){
+				followSets[(*it).first].insert(tempVector[i]);
+			}
+		}
+	}
+	std::cout<<"Follow Set is  : "<<std::endl;
+	std::map<std::string, std::set<std::string> >::iterator it1;
+	std::set<std::string>::iterator itSet;
+	for(it1=followSets.begin();it1!=followSets.end();it1++){
+		std::cout<<(*it1).first<<" -> ";
+		for(itSet=(*it1).second.begin();itSet != (*it1).second.end();itSet++){
+			std::cout<<(*itSet)<<" | ";
+		}
+		std::cout<<std::endl;
+	}/*
+	for(it1=tempFollowSets.begin();it1!=tempFollowSets.end();it1++){
+		std::cout<<(*it1).first<<" -> ";
+		for(int i = 0 ; i<(*it1).second.size();i++){
+			std::cout<<(*it1).second[i]<<" | ";
+		}
+		std::cout<<std::endl;
+	}*/
 }
 
 std::set<std::string> LLGrammar::getFirst(std::string symbol){
