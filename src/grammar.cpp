@@ -195,6 +195,7 @@ void LLGrammar::computeFirstSets(){
 		firstSets[terminals[i]].insert(terminals[i]);
 	}
 
+	firstSets["@"].insert("@") ;
 	std::cout<<"First Set is  : "<<std::endl;
 	std::map<std::string, std::set<std::string> >::iterator it;
 	std::set<std::string>::iterator itSet;
@@ -315,4 +316,83 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 		}
 	}
 	return productions;
+}
+
+
+void LLGrammar::ParserTableConstruction(){
+
+	std::set<std::string> Firstset 	;
+	std::set<std::string> followset    ;
+	std::set<std::string>::iterator set_iterator ;
+	std::map< std::pair<std::string ,std::string >, std::string > ParseTable ;
+	std::pair<std::string,std::string> temp_pair ;
+	std::vector<std::string> tokens;
+	std::ofstream out("output.txt");
+	int k, MaxSymbols ;
+	bool isEpsilon ;
+
+	for(int i=0 ; i<non_terminals.size() ; i++){
+
+		for(int j=0 ; j<terminals.size() ;j++){
+			temp_pair = std::make_pair(non_terminals[i],terminals[j]);
+			ParseTable[temp_pair].assign("-") ;
+		}
+
+		temp_pair = std::make_pair(non_terminals[i],"$");
+		ParseTable[temp_pair].assign("-") ;
+		
+		for(int j=0 ; j< productions[non_terminals[i]].size() ; j++){
+
+			tokens.clear() ;
+			tokens = tokenize(productions[non_terminals[i]][j],".") ;
+			k = 0 ;
+			MaxSymbols = tokens.size() ;
+			isEpsilon = true ;
+			
+			while(k < MaxSymbols && isEpsilon){
+				
+				Firstset.clear() ;
+				Firstset = firstSets[tokens[k]] ;
+			
+				for(set_iterator=Firstset.begin() ; set_iterator!=Firstset.end() ; set_iterator++){
+					temp_pair = std::make_pair(non_terminals[i],*set_iterator);
+					ParseTable[temp_pair].assign(productions[non_terminals[i]][j]) ;
+				}
+
+				if(!containsEpsilon(tokens[k])){
+					isEpsilon = false ;
+				}
+
+				k++ ;
+			}
+
+			if(isEpsilon){
+				followset.clear() ;
+				followset = getFollow(non_terminals[i]) ;
+				for(set_iterator=followset.begin() ; set_iterator!=followset.end() ; set_iterator++){
+					temp_pair = std::make_pair(non_terminals[i],*set_iterator);
+					ParseTable[temp_pair].assign(productions[non_terminals[i]][j]) ;				
+				}
+			}
+		}
+	}
+
+	out << "-    " ;
+	for(int j=0 ; j<terminals.size() ;j++){
+			out << terminals[j] << "    " ;
+	}
+	out << "$    " << std::endl ;
+
+	for(int i=0 ; i<non_terminals.size() ; i++){
+		out << non_terminals[i] << "    " ;
+
+		for(int j=0 ; j<terminals.size() ;j++){
+			temp_pair = std::make_pair(non_terminals[i],terminals[j]);
+			out << ParseTable[temp_pair] << "    " ;
+		}
+
+		temp_pair = std::make_pair(non_terminals[i],"$");
+		out << ParseTable[temp_pair] << "    " << std::endl ;
+	}
+	out.close() ;
 }

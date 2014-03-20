@@ -47,6 +47,7 @@ public:
 	std::vector<std::string> getTerminals(bool print=false);
 	std::vector<std::string> getNonTerminals(bool print=false);
 	std::map<std::string, std::vector<std::string> > getProductionTable(bool print=false);
+	void ParserTableConstruction() ;
 };
 
 #endif
