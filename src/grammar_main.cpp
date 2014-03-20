@@ -11,5 +11,7 @@ int main(){
 	grammar.getNonTerminals(true);
 	grammar.getProductionTable(true);
 	grammar.computeFirstSets();
+	grammar.computeFollowSets();
+	grammar.parseTableConstruction() ;
 	return 0;
 }

@@ -7,7 +7,7 @@ LLGrammar::LLGrammar(){
 LLGrammar::LLGrammar(std::string filename){
 	firstSets.clear();
 	eInFirsts.clear();
-
+	startSymbol = "";
 	std::set<std::string> setTerminals,setNonTerminals,symbolsSet;
 	std::vector<std::string> _productions, _symbols;
 	std::string line,nonterminal;
@@ -23,6 +23,10 @@ LLGrammar::LLGrammar(std::string filename){
 				if(beginPos != std::string::npos){
 					nonterminal = nonterminal.substr(0,beginPos);
 				}
+				// To store the starting symbol of the language.
+				if(setNonTerminals.empty()){
+					startSymbol = nonterminal;
+				}
 				setNonTerminals.insert(nonterminal);
 				line = line.substr(endPos+2);
 				_productions = tokenize(line," |");
@@ -37,7 +41,7 @@ LLGrammar::LLGrammar(std::string filename){
 			}
 		}
 	}
-	std::copy(setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(non_terminals));
+	std::copy(setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(nonTerminals));
 	if(symbolsSet.find("@")!=symbolsSet.end()){	
 		symbolsSet.erase(symbolsSet.find("@"));
 	}
@@ -61,17 +65,17 @@ void LLGrammar::computeEpsilonSets(){
 		isChecked[terminals[i]] = true;
 	}
 
-	for(int i=0 ; i<non_terminals.size() ; i++){
-		eInFirsts[non_terminals[i]] = false ;
-		isChecked[non_terminals[i]] = false ;  
+	for(int i=0 ; i<nonTerminals.size() ; i++){
+		eInFirsts[nonTerminals[i]] = false ;
+		isChecked[nonTerminals[i]] = false ;  
 	}
 	
 	while(continueInLoop){
-		for(int i=0; i<non_terminals.size() ;i++){			
-			if(!isChecked[non_terminals[i]]){
+		for(int i=0; i<nonTerminals.size() ;i++){
+			if(!isChecked[nonTerminals[i]]){
 				flag1 = true ;
-				for(int j=0 ; j< productions[non_terminals[i]].size() ; j++){
-					tokens = tokenize(productions[non_terminals[i]][j],".") ;
+				for(int j=0 ; j< productions[nonTerminals[i]].size() ; j++){
+					tokens = tokenize(productions[nonTerminals[i]][j],".") ;
 					flag2 = true ;
 					isEpsilon = true ;
 					for(int k=0	; k<tokens.size() ; k++){
@@ -94,19 +98,19 @@ void LLGrammar::computeEpsilonSets(){
 					}
 
 					if(isEpsilon){
-						eInFirsts[non_terminals[i]] = true ;
-						isChecked[non_terminals[i]]   = true ;
+						eInFirsts[nonTerminals[i]] = true ;
+						isChecked[nonTerminals[i]]   = true ;
 						break ;
 					}
 				}
 				if(flag1){
-					eInFirsts[non_terminals[i]] = false ;
-					isChecked[non_terminals[i]]   = true  ;
-				}				
+					eInFirsts[nonTerminals[i]] = false ;
+					isChecked[nonTerminals[i]]   = true  ;
+				}
 			}
 			continueInLoop = false ;
-			for(int i=0; i<non_terminals.size() ;i++){
-				if(!isChecked[non_terminals[i]]){
+			for(int i=0; i<nonTerminals.size() ;i++){
+				if(!isChecked[nonTerminals[i]]){
 					continueInLoop = true ;
 				}
 			}
@@ -128,11 +132,11 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 	}
 
 	for(int i=0 ; i<productions[symbol].size(); i++){
-		std::vector<std::string> _symbols = tokenize(productions[symbol][i],".");
+		_symbols = tokenize(productions[symbol][i],".");
 		for(int j = 0; j<_symbols.size(); j++){
 			if(!(containsEpsilon(_symbols[j]))){
 				flag=1;
-				if(find(terminals.begin(), terminals.end(), _symbols[j]) != terminals.end()){
+				if(find(terminals.begin(), terminals.end(),_symbols[j]) != terminals.end()){
 					firstSet.insert(_symbols[j]);
 				}
 				else{
@@ -150,24 +154,47 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 	return firstSet;
 }
 
-std::set<std::string> LLGrammar::computeFollow(std::string symbol){
+void LLGrammar::computeFollow(std::string symbol,std::map<std::string, std::vector<std::string> >& tempFollowSets ){
+//	std::set<std::string> followSet, anotherFollowSet;
+	std::vector<std::string> _symbols;
+	if(symbol == startSymbol){
+		tempFollowSets[symbol].push_back("$");
+	}
 
+	for(int i=0;i<productions[symbol].size();i++){
+		_symbols = tokenize(productions[symbol][i],".");
+		for(int j=0; j< _symbols.size()-1;j++){
+			if(_symbols[j]!="@"){
+				tempFollowSets[_symbols[j]].push_back("FIRST_"+_symbols[j+1]);
+			}
+		}
+		for(int j=_symbols.size(); j>0;j--){
+			if(j==_symbols.size() || containsEpsilon(_symbols[j])){
+				if(_symbols[j-1]!="@"){
+					tempFollowSets[_symbols[j-1]].push_back("FOLLOW_"+symbol);
+				}
+			}else{
+				break;
+			}
+		}
+	}
 }
 
 void LLGrammar::computeFirstSets(){
 
 	computeEpsilonSets();
 
-	for(int i = 0; i<non_terminals.size(); i++){
-		if(firstSets.find(non_terminals[i]) == firstSets.end()){
-			firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
+	for(int i = 0; i<nonTerminals.size(); i++){
+		if(firstSets.find(nonTerminals[i]) == firstSets.end()){
+			firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
 		}
 	}
 
 	for(int i = 0; i<terminals.size(); i++){
+		firstSets[terminals[i]].clear();
 		firstSets[terminals[i]].insert(terminals[i]);
 	}
-
+	firstSets["@"].insert("@");
 	std::cout<<"First Set is  : "<<std::endl;
 	std::map<std::string, std::set<std::string> >::iterator it;
 	std::set<std::string>::iterator itSet;
@@ -181,15 +208,88 @@ void LLGrammar::computeFirstSets(){
 }
 
 void LLGrammar::computeFollowSets(){
+	std::map<std::string, std::vector<std::string> > tempFollowSets;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	std::vector<std::string> tempVector, bfsVector;
+	std::string symbol, _symbol; 
+	for(int i=0;i<nonTerminals.size();i++){
+		computeFollow(nonTerminals[i],tempFollowSets);
+	}
 
+	for(it=tempFollowSets.begin();it!=tempFollowSets.end();it++){
+		tempVector = (*it).second;
+		std::unique (tempVector.begin(), tempVector.end());
+		tempVector.erase(std::remove(tempVector.begin(), tempVector.end(), "@"), tempVector.end());
+	}
+	
+	for(it = tempFollowSets.begin(); it!=tempFollowSets.end(); it++ ){
+		tempVector = (*it).second;
+		std::map<std::string,bool> visited;
+		std::queue<std::string> q;
+		visited[(*it).first]=true;
+		for(int i=0; i < tempVector.size(); i++){
+			if(tempVector[i] == "$"){
+				followSets[(*it).first].insert("$");
+			}
+			if(tempVector[i].find("FIRST_") == 0 ){
+				symbol = tempVector[i].substr(6);
+				std::copy(firstSets[symbol].begin(), firstSets[symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
+			}else if ( tempVector[i].find("FOLLOW_") == 0 ){
+				symbol = tempVector[i].substr(7);
+				// Implementing BFS.
+				q.push(symbol);
+				while(!q.empty()){
+					symbol = q.front();
+					q.pop();
+					if(visited.find(symbol) != visited.end()){
+						continue;
+					}
+					visited[symbol] = true;
+					bfsVector = tempFollowSets[symbol];
+					for(int j=0;j<tempFollowSets[symbol].size(); j++){
+						if(visited.find(symbol) != visited.end()){
+							if(tempFollowSets[symbol][j] == "$"){
+								followSets[(*it).first].insert("$");
+							}
+							if(tempFollowSets[symbol][j].find("FIRST_") == 0){
+								_symbol = tempFollowSets[symbol][j].substr(6);
+								std::copy(firstSets[_symbol].begin(), firstSets[_symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
+							}else if (tempFollowSets[symbol][j].find("FOLLOW_") == 0){
+								_symbol = tempFollowSets[symbol][j].substr(7);
+								q.push(_symbol);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	std::cout<<"Follow Set is  : "<<std::endl;
+	std::map<std::string, std::set<std::string> >::iterator itFollowSets;
+	for(itFollowSets=followSets.begin();itFollowSets!=followSets.end();itFollowSets++){
+		if((*itFollowSets).second.find("@")!=(*itFollowSets).second.end()){	
+			(*itFollowSets).second.erase((*itFollowSets).second.find("@"));
+		}
+		std::cout<<(*itFollowSets).first<<" -> ";
+		for(std::set<std::string>::iterator itSet=(*itFollowSets).second.begin();itSet != (*itFollowSets).second.end();itSet++){
+			std::cout<<(*itSet)<<" | ";
+		}
+		std::cout<<std::endl;
+	}
 }
 
 std::set<std::string> LLGrammar::getFirst(std::string symbol){
-
+	std::set<std::string> result;
+	if(firstSets.find(symbol)!= firstSets.end())
+		result = firstSets[symbol];
+	return result; 
 }
 
 std::set<std::string> LLGrammar::getFollow(std::string symbol){
-
+	std::set<std::string> result;
+	if(followSets.find(symbol)!= followSets.end())
+		result = followSets[symbol];
+	return result; 
 }
 
 bool LLGrammar::containsEpsilon(std::string symbol){
@@ -228,11 +328,11 @@ std::vector<std::string> LLGrammar::getTerminals(bool print){
 std::vector<std::string> LLGrammar::getNonTerminals(bool print){
 	if(print){
 		std::cout<<"List of non-terminals are : "<<std::endl;
-		for(int i=0;i<non_terminals.size();i++){
-			std::cout<<i+1<<")\t"<<non_terminals[i]<<std::endl;
+		for(int i=0;i<nonTerminals.size();i++){
+			std::cout<<i+1<<")\t"<<nonTerminals[i]<<std::endl;
 		}
 	}
-	return non_terminals;
+	return nonTerminals;
 }
 
 std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(bool print){
@@ -248,4 +348,68 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 		}
 	}
 	return productions;
+}
+
+
+void LLGrammar::parseTableConstruction(){
+
+	std::set<std::string> firstSet;
+	std::set<std::string> followSet ;
+	std::set<std::string>::iterator setIterator ;
+	std::map< std::pair<std::string ,std::string >, std::string > parseTable ;
+	std::pair<std::string,std::string> tempPair ;
+	std::vector<std::string> tokens;
+	std::ofstream out("parse_table.txt");
+	bool isEpsilon ;
+
+	for(int i=0 ; i<nonTerminals.size() ; i++){
+		for(int j=0 ; j<terminals.size() ;j++){
+			tempPair = std::make_pair(nonTerminals[i],terminals[j]);
+			parseTable[tempPair].assign("error") ;
+		}
+		tempPair = std::make_pair(nonTerminals[i],"$");
+		parseTable[tempPair].assign("error") ;
+		
+		for(int j=0 ; j< productions[nonTerminals[i]].size() ; j++){
+			tokens = tokenize(productions[nonTerminals[i]][j],".") ;
+			int k = 0 ;
+			isEpsilon = true ;
+			while(k < tokens.size() && isEpsilon){
+				firstSet = getFirst(tokens[k]);
+				for(setIterator=firstSet.begin() ; setIterator!=firstSet.end() ; setIterator++){
+					tempPair = std::make_pair(nonTerminals[i],*setIterator);
+					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;
+				}
+				if(!containsEpsilon(tokens[k])){
+					isEpsilon = false ;
+				}
+				k++ ;
+			}
+
+			if(isEpsilon){
+				followSet = getFollow(nonTerminals[i]) ;
+				for(setIterator=followSet.begin() ; setIterator!=followSet.end() ; setIterator++){
+					tempPair = std::make_pair(nonTerminals[i],*setIterator);
+					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;				
+				}
+			}
+		}
+	}
+
+	out << "\\\t" ;
+	for(int j=0 ; j<terminals.size() ;j++){
+		out << terminals[j] << "\t" ;
+	}
+	out << "$\t" << std::endl ;
+
+	for(int i=0 ; i<nonTerminals.size() ; i++){
+		out << nonTerminals[i] << "\t" ;
+		for(int j=0 ; j<terminals.size() ;j++){
+			tempPair = std::make_pair(nonTerminals[i],terminals[j]);
+			out << parseTable[tempPair] << "\t" ;
+		}
+		tempPair = std::make_pair(nonTerminals[i],"$");
+		out << parseTable[tempPair] << "\t" << std::endl ;
+	}
+	out.close() ;
 }
