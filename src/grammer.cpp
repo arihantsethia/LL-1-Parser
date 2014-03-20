@@ -5,6 +5,9 @@ LLGrammar::LLGrammar(){
 }
 
 LLGrammar::LLGrammar(std::string filename){
+	firstSets.clear();
+	eInFirsts.clear();
+
 	std::set<std::string> setTerminals,setNonTerminals,symbolsSet;
 	std::vector<std::string> _productions, _symbols;
 	std::string line,nonterminal;
@@ -50,9 +53,8 @@ void LLGrammar::computeEpsilonSets(){
 
 	std::map<std::string,bool>	isChecked ;
 	std::vector<std::string> tokens;
-	bool flag1, flag2, isEpsilon ;
+	bool flag1, flag2, isEpsilon,continueInLoop = true;
 	isChecked.clear();
-	eInFirsts.clear();
 	
 	for(int i=0 ; i<terminals.size() ; i++){
 		eInFirsts[terminals[i]] = false;
@@ -64,9 +66,7 @@ void LLGrammar::computeEpsilonSets(){
 		isChecked[non_terminals[i]] = false ;  
 	}
 	
-	bool continueInLoop = true ;
 	while(continueInLoop){
-
 		for(int i=0; i<non_terminals.size() ;i++){			
 			if(!isChecked[non_terminals[i]]){
 				flag1 = true ;
@@ -115,6 +115,10 @@ void LLGrammar::computeEpsilonSets(){
 }
 
 std::set<std::string> LLGrammar::computeFirst(std::string symbol){
+
+	if(firstSets.find(symbol) != firstSets.end()){
+		return firstSets[symbol];
+	}
 	std::set<std::string> firstSet, anotherFirstSet;
 	std::vector<std::string> _symbols;
 	int flag=0;
@@ -155,12 +159,12 @@ void LLGrammar::computeFirstSets(){
 	computeEpsilonSets();
 
 	for(int i = 0; i<non_terminals.size(); i++){
-		firstSets[non_terminals[i]].clear();
-		firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
+		if(firstSets.find(non_terminals[i]) == firstSets.end()){
+			firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
+		}
 	}
 
 	for(int i = 0; i<terminals.size(); i++){
-		firstSets[terminals[i]].clear();
 		firstSets[terminals[i]].insert(terminals[i]);
 	}
 
