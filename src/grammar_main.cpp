@@ -12,6 +12,6 @@ int main(){
 	grammar.getProductionTable(true);
 	grammar.computeFirstSets();
 	grammar.computeFollowSets();
-	grammar.ParserTableConstruction() ;
+	grammar.parseTableConstruction() ;
 	return 0;
 }

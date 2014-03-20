@@ -41,7 +41,7 @@ LLGrammar::LLGrammar(std::string filename){
 			}
 		}
 	}
-	std::copy(setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(non_terminals));
+	std::copy(setNonTerminals.begin(), setNonTerminals.end(), std::back_inserter(nonTerminals));
 	if(symbolsSet.find("@")!=symbolsSet.end()){	
 		symbolsSet.erase(symbolsSet.find("@"));
 	}
@@ -65,17 +65,17 @@ void LLGrammar::computeEpsilonSets(){
 		isChecked[terminals[i]] = true;
 	}
 
-	for(int i=0 ; i<non_terminals.size() ; i++){
-		eInFirsts[non_terminals[i]] = false ;
-		isChecked[non_terminals[i]] = false ;  
+	for(int i=0 ; i<nonTerminals.size() ; i++){
+		eInFirsts[nonTerminals[i]] = false ;
+		isChecked[nonTerminals[i]] = false ;  
 	}
 	
 	while(continueInLoop){
-		for(int i=0; i<non_terminals.size() ;i++){
-			if(!isChecked[non_terminals[i]]){
+		for(int i=0; i<nonTerminals.size() ;i++){
+			if(!isChecked[nonTerminals[i]]){
 				flag1 = true ;
-				for(int j=0 ; j< productions[non_terminals[i]].size() ; j++){
-					tokens = tokenize(productions[non_terminals[i]][j],".") ;
+				for(int j=0 ; j< productions[nonTerminals[i]].size() ; j++){
+					tokens = tokenize(productions[nonTerminals[i]][j],".") ;
 					flag2 = true ;
 					isEpsilon = true ;
 					for(int k=0	; k<tokens.size() ; k++){
@@ -98,19 +98,19 @@ void LLGrammar::computeEpsilonSets(){
 					}
 
 					if(isEpsilon){
-						eInFirsts[non_terminals[i]] = true ;
-						isChecked[non_terminals[i]]   = true ;
+						eInFirsts[nonTerminals[i]] = true ;
+						isChecked[nonTerminals[i]]   = true ;
 						break ;
 					}
 				}
 				if(flag1){
-					eInFirsts[non_terminals[i]] = false ;
-					isChecked[non_terminals[i]]   = true  ;
+					eInFirsts[nonTerminals[i]] = false ;
+					isChecked[nonTerminals[i]]   = true  ;
 				}
 			}
 			continueInLoop = false ;
-			for(int i=0; i<non_terminals.size() ;i++){
-				if(!isChecked[non_terminals[i]]){
+			for(int i=0; i<nonTerminals.size() ;i++){
+				if(!isChecked[nonTerminals[i]]){
 					continueInLoop = true ;
 				}
 			}
@@ -184,9 +184,9 @@ void LLGrammar::computeFirstSets(){
 
 	computeEpsilonSets();
 
-	for(int i = 0; i<non_terminals.size(); i++){
-		if(firstSets.find(non_terminals[i]) == firstSets.end()){
-			firstSets[non_terminals[i]]=computeFirst(non_terminals[i]);
+	for(int i = 0; i<nonTerminals.size(); i++){
+		if(firstSets.find(nonTerminals[i]) == firstSets.end()){
+			firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
 		}
 	}
 
@@ -212,8 +212,8 @@ void LLGrammar::computeFollowSets(){
 	std::map<std::string, std::vector<std::string> >::iterator it;
 	std::vector<std::string> tempVector, bfsVector;
 	std::string symbol, _symbol; 
-	for(int i=0;i<non_terminals.size();i++){
-		computeFollow(non_terminals[i],tempFollowSets);
+	for(int i=0;i<nonTerminals.size();i++){
+		computeFollow(nonTerminals[i],tempFollowSets);
 	}
 
 	for(it=tempFollowSets.begin();it!=tempFollowSets.end();it++){
@@ -328,11 +328,11 @@ std::vector<std::string> LLGrammar::getTerminals(bool print){
 std::vector<std::string> LLGrammar::getNonTerminals(bool print){
 	if(print){
 		std::cout<<"List of non-terminals are : "<<std::endl;
-		for(int i=0;i<non_terminals.size();i++){
-			std::cout<<i+1<<")\t"<<non_terminals[i]<<std::endl;
+		for(int i=0;i<nonTerminals.size();i++){
+			std::cout<<i+1<<")\t"<<nonTerminals[i]<<std::endl;
 		}
 	}
-	return non_terminals;
+	return nonTerminals;
 }
 
 std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(bool print){
@@ -351,80 +351,65 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 }
 
 
-void LLGrammar::ParserTableConstruction(){
+void LLGrammar::parseTableConstruction(){
 
-	std::set<std::string> Firstset 	;
-	std::set<std::string> followset    ;
-	std::set<std::string>::iterator set_iterator ;
-	std::map< std::pair<std::string ,std::string >, std::string > ParseTable ;
-	std::pair<std::string,std::string> temp_pair ;
+	std::set<std::string> firstSet;
+	std::set<std::string> followSet ;
+	std::set<std::string>::iterator setIterator ;
+	std::map< std::pair<std::string ,std::string >, std::string > parseTable ;
+	std::pair<std::string,std::string> tempPair ;
 	std::vector<std::string> tokens;
-	std::ofstream out("output.txt");
-	int k, MaxSymbols ;
+	std::ofstream out("parse_table.txt");
 	bool isEpsilon ;
 
-	for(int i=0 ; i<non_terminals.size() ; i++){
-
+	for(int i=0 ; i<nonTerminals.size() ; i++){
 		for(int j=0 ; j<terminals.size() ;j++){
-			temp_pair = std::make_pair(non_terminals[i],terminals[j]);
-			ParseTable[temp_pair].assign("-") ;
+			tempPair = std::make_pair(nonTerminals[i],terminals[j]);
+			parseTable[tempPair].assign("error") ;
 		}
-
-		temp_pair = std::make_pair(non_terminals[i],"$");
-		ParseTable[temp_pair].assign("-") ;
+		tempPair = std::make_pair(nonTerminals[i],"$");
+		parseTable[tempPair].assign("error") ;
 		
-		for(int j=0 ; j< productions[non_terminals[i]].size() ; j++){
-
-			tokens.clear() ;
-			tokens = tokenize(productions[non_terminals[i]][j],".") ;
-			k = 0 ;
-			MaxSymbols = tokens.size() ;
+		for(int j=0 ; j< productions[nonTerminals[i]].size() ; j++){
+			tokens = tokenize(productions[nonTerminals[i]][j],".") ;
+			int k = 0 ;
 			isEpsilon = true ;
-			
-			while(k < MaxSymbols && isEpsilon){
-				
-				Firstset.clear() ;
-				Firstset = firstSets[tokens[k]] ;
-			
-				for(set_iterator=Firstset.begin() ; set_iterator!=Firstset.end() ; set_iterator++){
-					temp_pair = std::make_pair(non_terminals[i],*set_iterator);
-					ParseTable[temp_pair].assign(productions[non_terminals[i]][j]) ;
+			while(k < tokens.size() && isEpsilon){
+				firstSet = getFirst(tokens[k]);
+				for(setIterator=firstSet.begin() ; setIterator!=firstSet.end() ; setIterator++){
+					tempPair = std::make_pair(nonTerminals[i],*setIterator);
+					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;
 				}
-
 				if(!containsEpsilon(tokens[k])){
 					isEpsilon = false ;
 				}
-
 				k++ ;
 			}
 
 			if(isEpsilon){
-				followset.clear() ;
-				followset = getFollow(non_terminals[i]) ;
-				for(set_iterator=followset.begin() ; set_iterator!=followset.end() ; set_iterator++){
-					temp_pair = std::make_pair(non_terminals[i],*set_iterator);
-					ParseTable[temp_pair].assign(productions[non_terminals[i]][j]) ;				
+				followSet = getFollow(nonTerminals[i]) ;
+				for(setIterator=followSet.begin() ; setIterator!=followSet.end() ; setIterator++){
+					tempPair = std::make_pair(nonTerminals[i],*setIterator);
+					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;				
 				}
 			}
 		}
 	}
 
-	out << "-    " ;
+	out << "\\\t" ;
 	for(int j=0 ; j<terminals.size() ;j++){
-			out << terminals[j] << "    " ;
+		out << terminals[j] << "\t" ;
 	}
-	out << "$    " << std::endl ;
+	out << "$\t" << std::endl ;
 
-	for(int i=0 ; i<non_terminals.size() ; i++){
-		out << non_terminals[i] << "    " ;
-
+	for(int i=0 ; i<nonTerminals.size() ; i++){
+		out << nonTerminals[i] << "\t" ;
 		for(int j=0 ; j<terminals.size() ;j++){
-			temp_pair = std::make_pair(non_terminals[i],terminals[j]);
-			out << ParseTable[temp_pair] << "    " ;
+			tempPair = std::make_pair(nonTerminals[i],terminals[j]);
+			out << parseTable[tempPair] << "\t" ;
 		}
-
-		temp_pair = std::make_pair(non_terminals[i],"$");
-		out << ParseTable[temp_pair] << "    " << std::endl ;
+		tempPair = std::make_pair(nonTerminals[i],"$");
+		out << parseTable[tempPair] << "\t" << std::endl ;
 	}
 	out.close() ;
 }
