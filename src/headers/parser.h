@@ -21,6 +21,7 @@
 
 class LLParser{
 private:
+	std::string startSymbol;
 	std::map< std::pair<std::string,std::string> , std::string > parseTable;
 	std::vector<std::string> tokens;
 	std::vector<std::string> terminals;

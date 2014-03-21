@@ -29,12 +29,16 @@ private:
 	std::map<std::string, std::vector<std::string> > productions;
 	std::map<std::string, bool> eInFirsts;
 
+	std::string getNextNonTerminalSymbol(std::string);
 	std::vector<std::string> tokenize(std::string, std::string);
 	std::set<std::string> computeFirst(std::string);
 	void computeEpsilonSets();	
 	void computeFollow(std::string,std::map<std::string, std::vector<std::string> >&);
 	bool removeLeftRecursion();
-	void leftFactor();
+	bool leftFactor();
+	void optimizeTable();
+	std::vector<std::string> removeDuplicates(std::vector<std::string>);
+	std::string removeExtraEplisons(std::string);
 
 public:
 

@@ -12,12 +12,11 @@ LLParser::LLParser(std::vector<std::string> _tokens){
 	std::string line,_nonTerminal,_terminal;
 	std::pair<std::string,std::string> tempPair;
 	std::vector<std::string> _symbols,tableSymbols;
-
 	std::ifstream in("parse_table.txt");
 
 	tokens = _tokens;
+	in>>startSymbol;
 	getline(in,line);
-
 	tableSymbols = tokenize(line," \t");
 	terminals = tableSymbols;
 	terminals.erase(terminals.begin()+1);
@@ -36,32 +35,29 @@ LLParser::LLParser(std::vector<std::string> _tokens){
 }
 
 bool LLParser::parse(bool print){
-	
+	int pos = 0;
 	std::vector<std::string> _symbols;
 	std::stack<std::string> parseStack;
 	std::pair<std::string,std::string> tempPair;
 
 	parseStack.push("$");
-	parseStack.push("E");
+	parseStack.push(startSymbol);
 
-	int ip=0;
-
-	while(ip<tokens.size()){
-		// Change the code for X == terminal
+	while(pos<tokens.size()){
 		if(find(terminals.begin(),terminals.end(),parseStack.top()) != terminals.end()){
-			if(parseStack.top() == tokens[ip]){
+			if(parseStack.top() == tokens[pos]){
 				if(print){
 					std::cout<<"POP : "<<parseStack.top()<<std::endl;
 				}
 				parseStack.pop();
-				ip++;
+				pos++;
 			}
 			else{
 				return false;
 			}
 		}
 		else if(parseStack.top() == "$"){
-			if(tokens[ip] == "$"){
+			if(tokens[pos] == "$"){
 				return true;
 			}
 			else{
@@ -69,7 +65,7 @@ bool LLParser::parse(bool print){
 			}
 		}
 		else if(find(nonTerminals.begin(),nonTerminals.end(),parseStack.top()) != nonTerminals.end()){
-			tempPair=std::make_pair(parseStack.top(),tokens[ip]);
+			tempPair=std::make_pair(parseStack.top(),tokens[pos]);
 			if(parseTable[tempPair] != "error"){
 				if(print){
 					std::cout<<"POP : "<<parseStack.top()<<std::endl;
@@ -95,8 +91,7 @@ bool LLParser::parse(bool print){
 				return false;
 			}
 		}
-	}
-	
+	}	
 	return true;
 }
 
