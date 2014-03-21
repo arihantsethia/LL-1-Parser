@@ -15,7 +15,7 @@ LLParser::LLParser(std::vector<std::string> _tokens){
 	std::ifstream in("parse_table.txt");
 
 	tokens = _tokens;
-	in>>startSymbol;
+	getline(in,startSymbol);
 	getline(in,line);
 	tableSymbols = tokenize(line," \t");
 	terminals = tableSymbols;

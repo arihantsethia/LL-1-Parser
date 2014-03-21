@@ -10,7 +10,11 @@ int main(){
 	input.push_back("$");
 
 	LLParser parser(input);
-	std::cout<<parser.parse(true);
+	if(parser.parse(true)){
+		std::cout<<"Succesfull. :)"<<std::endl;
+	}else{
+		std::cout<<"Error : Not a valid instance of the language."<<std::endl;
+	}
 
 	return 0;
 }
