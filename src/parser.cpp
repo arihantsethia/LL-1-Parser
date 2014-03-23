@@ -17,19 +17,18 @@ LLParser::LLParser(std::vector<std::string> _tokens){
 	tokens = _tokens;
 	getline(in,startSymbol);
 	getline(in,line);
-	tableSymbols = tokenize(line," \t");
+	tableSymbols = tokenize(line," \t|");
 	terminals = tableSymbols;
-	terminals.erase(terminals.begin()+1);
 	terminals.erase(terminals.end()-1);
-
+	getline(in,line);
 	while(getline(in,line)){
-		_symbols=tokenize(line," \t");
+		_symbols=tokenize(line," \t|");
 		_nonTerminal = _symbols[0];
 		nonTerminals.push_back(_nonTerminal);
-		for(int i=1;i<tableSymbols.size();i++){
+		for(int i=0;i<tableSymbols.size();i++){
 			_terminal = tableSymbols[i];
 			tempPair=std::make_pair(_nonTerminal,_terminal);
-			parseTable[tempPair] = _symbols[i];
+			parseTable[tempPair] = _symbols[i+1];
 		}
 	}
 }

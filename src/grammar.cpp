@@ -13,13 +13,13 @@ LLGrammar::LLGrammar(std::string filename){
 	std::string line,nonterminal;
 	std::ifstream in(filename.c_str());
 	while(getline(in,line)){
-		std::string::size_type beginPos = line.find_first_not_of(" ");
+		std::string::size_type beginPos = line.find_first_not_of(" \t");
 		if(beginPos!= std::string::npos){
 			std::string::size_type endPos = line.find("->",beginPos);
 			if( endPos != std::string::npos){
 				nonterminal = line.substr(beginPos,endPos-beginPos);
 				// To remove spaces from nonterminal if any.
-				beginPos = nonterminal.find_first_of(" ",0);
+				beginPos = nonterminal.find_first_of(" \t",0);
 				if(beginPos != std::string::npos){
 					nonterminal = nonterminal.substr(0,beginPos);
 				}
@@ -29,7 +29,7 @@ LLGrammar::LLGrammar(std::string filename){
 				}
 				setNonTerminals.insert(nonterminal);
 				line = line.substr(endPos+2);
-				_productions = tokenize(line," |");
+				_productions = tokenize(line," |\t");
 				for(int i=0;i<_productions.size();i++){
 					productions[nonterminal].push_back(_productions[i]);
 					_symbols = tokenize(_productions[i],".");
@@ -436,6 +436,7 @@ void LLGrammar::computeFollowSets(bool print){
 }
 
 void LLGrammar::parseTableConstruction(){
+	int maxLengthProductions = 0, maxLengthSymbol = 0;
 	std::set<std::string> firstSet;
 	std::set<std::string> followSet ;
 	std::set<std::string>::iterator setIterator ;
@@ -476,23 +477,28 @@ void LLGrammar::parseTableConstruction(){
 					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;				
 				}
 			}
+			// To get the maximum string length of a production for better formatting of table in output.
+			maxLengthProductions = std::max(maxLengthProductions,(int)productions[nonTerminals[i]][j].length());
 		}
+		maxLengthSymbol = std::max(maxLengthSymbol,(int)nonTerminals[i].length());
 	}
 	out << startSymbol<<std::endl ;
-	out << "\\\t" ;
+	std::stringstream printLine ;
+	printLine << "|"<<std::setw(maxLengthSymbol+1) ;
 	for(int j=0 ; j<terminals.size() ;j++){
-		out << terminals[j] << "\t" ;
+		printLine<<"|"<<std::setw(maxLengthProductions)<< terminals[j];
 	}
-	out << "$\t" << std::endl ;
-
+	printLine <<"|"<<std::setw(maxLengthProductions)<<"$"<<std::endl ;
+	out<<printLine.str();
+	out<<std::setw(printLine.str().length())<<std::setfill('-')<<'-'<<std::endl<<std::setfill(' ');
 	for(int i=0 ; i<nonTerminals.size() ; i++){
-		out << nonTerminals[i] << "\t" ;
+		out<<"|"<<std::setw(maxLengthSymbol)<< nonTerminals[i];
 		for(int j=0 ; j<terminals.size() ;j++){
 			tempPair = std::make_pair(nonTerminals[i],terminals[j]);
-			out << parseTable[tempPair] << "\t" ;
+			out <<"|"<<std::setw(maxLengthProductions)<<parseTable[tempPair];
 		}
 		tempPair = std::make_pair(nonTerminals[i],"$");
-		out << parseTable[tempPair] << "\t" << std::endl ;
+		out<<"|"<<std::setw(maxLengthProductions)<<parseTable[tempPair] << std::endl ;
 	}
 	out.close() ;
 }
