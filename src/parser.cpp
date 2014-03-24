@@ -52,6 +52,7 @@ bool LLParser::parse(bool print){
 				pos++;
 			}
 			else{
+				std::cout<<parseStack.top()<<" : "<<tokens[pos]<<std::endl;
 				return false;
 			}
 		}

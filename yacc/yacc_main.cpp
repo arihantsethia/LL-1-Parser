@@ -15,7 +15,11 @@ int main() {
 		return 0;
 	}
 	yyin=fp;
-	yyparse();
+	if(yyparse()==0){
+		std::cout<<"Parse Successfull :-)"<<std::endl;
+	}else{
+		std::cout<<"Parse Unsuccessfull :-("<<std::endl;
+	}
 	fclose(fp);
 	return 0;
 }
