@@ -348,19 +348,18 @@ void LLGrammar::computeFirstSets(bool print){
 				firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
 				if(!isLL1){
 					std::cout<<"First sets of productions for "<<nonTerminals[i]<<" are not dis-joint."<<std::endl;
-					return;
+					//return;
 				}
 			}
 		}
 	}
-	
 	if(print && isLL1){
 		std::cout<<"First Set is  : "<<std::endl;
 		std::map<std::string, std::set<std::string> >::iterator it;
 		std::set<std::string>::iterator itSet;
 		for(int i = 0; i<terminals.size(); i++){
 			std::cout<<terminals[i]<<"\t->\t";
-			for(itSet=firstSets[terminals[i]].begin();itSet != (*it).second.end();itSet++){
+			for(itSet=firstSets[terminals[i]].begin();itSet != firstSets[terminals[i]].end();itSet++){
 				std::cout<<(*itSet)<<"\t|\t";
 			}
 			std::cout<<std::endl;
@@ -368,7 +367,7 @@ void LLGrammar::computeFirstSets(bool print){
 
 		for(int i = 0; i<nonTerminals.size(); i++){
 			std::cout<<nonTerminals[i]<<"\t->\t";
-			for(itSet=firstSets[nonTerminals[i]].begin();itSet != (*it).second.end();itSet++){
+			for(itSet=firstSets[nonTerminals[i]].begin();itSet != firstSets[nonTerminals[i]].end();itSet++){
 				std::cout<<(*itSet)<<"\t|\t";
 			}
 			std::cout<<std::endl;
@@ -447,25 +446,9 @@ void LLGrammar::computeFollowSets(bool print){
 				}
 			}
 		}
-
-		std::set<std::string> firstSet,followSet;
-		for(int i=0; i < nonTerminals.size(); i++){
-			if(containsEpsilon(nonTerminals[i])){
-				followSet = getFollow(nonTerminals[i]);
-				firstSet = getFirst(nonTerminals[i]);
-				for(std::set<std::string>::iterator it = firstSet.begin(); it != firstSet.end(); it++){
-					if(followSet.find(*it)!=followSet.end()){				
-						std::cout<<"Terminal : "<<*it<<" is present in first sets and follow set of "<<nonTerminals[i]<<std::endl;
-						std::cout<<"First and Follow sets are not disjoint for "<<symbol<<" are not dis-joint."<<std::endl;
-						isLL1 = false;
-						return;
-					}
-				}
-			}
-		}
 	}
 
-	if(print && isLL1){
+	if(print){
 		std::cout<<"Follow Set is  : "<<std::endl;
 	}
 	std::map<std::string, std::set<std::string> >::iterator itFollowSets;
@@ -479,6 +462,21 @@ void LLGrammar::computeFollowSets(bool print){
 				std::cout<<(*itSet)<<"\t|\t";
 			}
 			std::cout<<std::endl;
+		}
+	}
+	std::set<std::string> firstSet,followSet;
+	for(int i=0; i < nonTerminals.size(); i++){
+		if(containsEpsilon(nonTerminals[i])){
+			followSet = getFollow(nonTerminals[i]);
+			firstSet = getFirst(nonTerminals[i]);
+			for(std::set<std::string>::iterator it = firstSet.begin(); it != firstSet.end(); it++){
+				if(followSet.find(*it)!=followSet.end()){				
+					std::cout<<"Terminal : "<<*it<<" is present in first sets and follow set of "<<nonTerminals[i]<<std::endl;
+					std::cout<<"First and Follow sets are not disjoint for "<<nonTerminals[i]<<"."<<std::endl;
+					isLL1 = false;
+					return;
+				}
+			}
 		}
 	}
 }

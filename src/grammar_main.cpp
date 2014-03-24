@@ -10,8 +10,8 @@ int main(){
 	grammar.getTerminals(true);
 	grammar.getNonTerminals(true);
 	grammar.getProductionTable(true);
-	grammar.computeFollowSets(true);
 	grammar.computeFirstSets(true);
+	grammar.computeFollowSets(true);
 	grammar.parseTableConstruction() ;
 	return 0;
 }
