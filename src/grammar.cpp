@@ -156,7 +156,6 @@ bool LLGrammar::leftFactor(){
 }
 
 void LLGrammar::optimizeTable(){
-	bool wasNotLeftFactored = false;
 	std::string::size_type pos;
 	std::string startTokenSymbol,restOfProduction,nextNonTerminalSymbol;
 	std::map<std::string, std::vector< std::pair<std::string, int> > > countMap;
@@ -198,7 +197,8 @@ std::string LLGrammar::removeExtraEplisons(std::string str){
 	}
 	if(posMap["@"].size() == _tokens.size()){
 		retStr = "@";
-	}else{
+	}
+	else{
 		_tokens.erase(std::remove(_tokens.begin(), _tokens.end(), "@"), _tokens.end());
 		for(int i=0;i<_tokens.size()-1;i++){
 			retStr += _tokens[i]+".";
@@ -308,15 +308,26 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 
 void LLGrammar::computeFollow(std::string symbol,std::map<std::string, std::vector<std::string> >& tempFollowSets ){
 	std::vector<std::string> _symbols;
+	int addBackwardsTill;
 	if(symbol == startSymbol){
 		tempFollowSets[symbol].push_back("$");
 	}
 
 	for(int i=0;i<productions[symbol].size();i++){
 		_symbols = tokenize(productions[symbol][i],".");
+		addBackwardsTill = 0;
 		for(int j=0; j< _symbols.size()-1;j++){
 			if(_symbols[j]!="@"){
 				tempFollowSets[_symbols[j]].push_back("FIRST_"+_symbols[j+1]);
+			}
+
+			if(containsEpsilon(_symbols[j])){
+				for(int k=j-1; k >= addBackwardsTill; k--){
+					tempFollowSets[_symbols[k]].push_back("FIRST_"+_symbols[j+1]);
+				}
+			}
+			else{
+				addBackwardsTill = j;
 			}
 		}
 		for(int j=_symbols.size(); j>0;j--){
@@ -348,7 +359,7 @@ void LLGrammar::computeFirstSets(bool print){
 				firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
 				if(!isLL1){
 					std::cout<<"First sets of productions for "<<nonTerminals[i]<<" are not dis-joint."<<std::endl;
-					//return;
+					return;
 				}
 			}
 		}
@@ -482,6 +493,17 @@ void LLGrammar::computeFollowSets(bool print){
 }
 
 void LLGrammar::parseTableConstruction(){
+	if(!isLL1){
+		std::cout<<"Grammar is not LL(1). Please make the grammar LL(1) before creating parse table."<<std::endl;
+		return;
+	}
+	if(followSetsComputed==false){
+		std::cout<<"Warning : Follow sets not computed. Computing follow sets."<<std::endl;
+		computeFollowSets(false);
+		if(!isLL1){
+			return;
+		}
+	}
 	int maxLengthProductions = 0, maxLengthSymbol = 0;
 	std::set<std::string> firstSet;
 	std::set<std::string> followSet ;
@@ -619,14 +641,14 @@ std::map<std::string, std::vector<std::string> > LLGrammar::getProductionTable(b
 }
 
 std::string LLGrammar::getNextNonTerminalSymbol(std::string symbol){
-	if(find(nonTerminals.begin(),nonTerminals.end(),symbol) != nonTerminals.end()){
+	if((find(nonTerminals.begin(),nonTerminals.end(),symbol) != nonTerminals.end()) || (find(terminals.begin(),terminals.end(),symbol) != terminals.end()) ){
 		return getNextNonTerminalSymbol(symbol+"'");
 	}
 	else{
 		return symbol;
 	}
 }
-
+  
 // This function tokenizes the string on the basis of delimeters space or newline or cariage return.
 std::vector<std::string> LLGrammar::tokenize(std::string s, std::string sep){
 	// Skip delimiters at beginning.
