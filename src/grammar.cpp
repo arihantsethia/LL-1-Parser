@@ -482,17 +482,6 @@ void LLGrammar::computeFollowSets(bool print){
 }
 
 void LLGrammar::parseTableConstruction(){
-	if(!isLL1){
-		std::cout<<"Grammar is not LL(1). Please make the grammar LL(1) before creating parse table."<<std::endl;
-		return;
-	}
-	if(followSetsComputed==false){
-		std::cout<<"Warning : Follow sets not computed. Computing follow sets."<<std::endl;
-		computeFollowSets(false);
-		if(!isLL1){
-			return;
-		}
-	}
 	int maxLengthProductions = 0, maxLengthSymbol = 0;
 	std::set<std::string> firstSet;
 	std::set<std::string> followSet ;
@@ -510,7 +499,11 @@ void LLGrammar::parseTableConstruction(){
 		}
 		tempPair = std::make_pair(nonTerminals[i],"$");
 		parseTable[tempPair].assign("error") ;
+		tempPair = std::make_pair(nonTerminals[i],"@");
+		parseTable[tempPair].assign("error") ;
 		
+
+
 		for(int j=0 ; j< productions[nonTerminals[i]].size() ; j++){
 			tokens = tokenize(productions[nonTerminals[i]][j],".") ;
 			int k = 0 ;
@@ -519,7 +512,12 @@ void LLGrammar::parseTableConstruction(){
 				firstSet = getFirst(tokens[k]);
 				for(setIterator=firstSet.begin() ; setIterator!=firstSet.end() ; setIterator++){
 					tempPair = std::make_pair(nonTerminals[i],*setIterator);
-					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;
+					if(parseTable[tempPair]=="error" || parseTable[tempPair]==productions[nonTerminals[i]][j] || *setIterator=="@")  
+					{	parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;
+					}else{
+						std::cout<< "Error two values in same cell" << std::endl;
+						exit(1) ;
+					}
 				}
 				if(!containsEpsilon(tokens[k])){
 					isEpsilon = false ;
@@ -531,7 +529,12 @@ void LLGrammar::parseTableConstruction(){
 				followSet = getFollow(nonTerminals[i]) ;
 				for(setIterator=followSet.begin() ; setIterator!=followSet.end() ; setIterator++){
 					tempPair = std::make_pair(nonTerminals[i],*setIterator);
-					parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;				
+					if(parseTable[tempPair]=="error" || parseTable[tempPair]==productions[nonTerminals[i]][j] || *setIterator=="@")  
+					{	parseTable[tempPair].assign(productions[nonTerminals[i]][j]) ;
+					}else{
+						std::cout<< "Error two values in same cell" << std::endl;
+						exit(1) ;
+					}				
 				}
 			}
 			// To get the maximum string length of a production for better formatting of table in output.

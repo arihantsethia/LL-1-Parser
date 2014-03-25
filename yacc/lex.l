@@ -46,7 +46,7 @@ IS			(u|U|l|L)*
 "void" 		return VOID ;
 "volatile" 		return VOLATILE ;
 "while" 		return WHILE ;
-"main" 		return MAIN ;
+"main" 		return IDENTIFIER ;
 "+" 		return PLUS ;
 "-" 		return MINUS ;
 "*" 		return TIMES ;

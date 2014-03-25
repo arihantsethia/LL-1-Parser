@@ -37,7 +37,7 @@ IdentList:   IDENTIFIER COMMA IdentList
 
 Stmt:   	ForStmt 
 			| WhileStmt 
-			| Expr SEMI 
+			| IDENTIFIER EQUALS Expr SEMI 
 			| IfStmt 
 			| CompoundStmt 
 			| Declaration 
@@ -54,11 +54,7 @@ OptExpr:   	Expr
 WhileStmt:  WHILE LP Expr RP Stmt
 			;
 
-IfStmt:   	IF LP Expr RP Stmt ElsePart
-			;
-
-ElsePart:   ELSE Stmt 
-			| /* empty */
+IfStmt:   	IF LP Expr RP Stmt
 			;
 
 CompoundStmt:   LB StmtList RB
@@ -67,8 +63,7 @@ StmtList:   StmtList Stmt
 			| /* empty */
 			;
 
-Expr:   	IDENTIFIER EQUALS Expr 
-			| Rvalue
+Expr:   	Rvalue
 			;
 
 Rvalue:	    Rvalue Compare Mag 
