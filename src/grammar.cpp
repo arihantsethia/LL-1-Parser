@@ -5,6 +5,9 @@ LLGrammar::LLGrammar(){
 }
 
 LLGrammar::LLGrammar(std::string filename){
+	isLL1 = true;
+	firstSetsComputed= false;
+	followSetsComputed = false;
 	firstSets.clear();
 	eInFirsts.clear();
 	startSymbol = "";
@@ -275,31 +278,28 @@ std::set<std::string> LLGrammar::computeFirst(std::string symbol){
 	if(firstSets.find(symbol) != firstSets.end()){
 		return firstSets[symbol];
 	}
-	std::set<std::string> firstSet, anotherFirstSet;
-	std::vector<std::string> _symbols;
-	int flag=0;
 
-	if(containsEpsilon(symbol)){
-		firstSet.insert("@");
-	}
+	std::set<std::string> firstSet, firstProductionSet, tempSet;
+	std::vector<std::string> _symbols;
 
 	for(int i=0 ; i<productions[symbol].size(); i++){
+		firstProductionSet.clear();
 		_symbols = tokenize(productions[symbol][i],".");
 		for(int j = 0; j<_symbols.size(); j++){
-			if(!(containsEpsilon(_symbols[j]))){
-				flag=1;
-				if(find(terminals.begin(), terminals.end(),_symbols[j]) != terminals.end()){
-					firstSet.insert(_symbols[j]);
-				}
-				else{
-					anotherFirstSet=computeFirst(_symbols[j]);
-					std::copy(anotherFirstSet.begin(), anotherFirstSet.end(), std::inserter(firstSet, firstSet.end()));
-				}
+			tempSet=computeFirst(_symbols[j]);
+			std::copy(tempSet.begin(), tempSet.end(), std::inserter(firstProductionSet, firstProductionSet.end()));
+			if(!containsEpsilon(_symbols[j])){
 				break;
 			}
 		}
-		if (flag==0){
-			firstSet.insert("@");
+		for(std::set<std::string>::iterator it = firstProductionSet.begin(); it != firstProductionSet.end(); it++){
+			if(firstSet.find(*it)!=firstSet.end()){				
+				std::cout<<"Terminal : "<<*it<<" is present in first sets of muliple productions for "<<symbol<<std::endl;
+				isLL1 = false;
+				break;
+			}else{
+				firstSet.insert(*it);
+			}
 		}
 	}
 
@@ -333,26 +333,41 @@ void LLGrammar::computeFollow(std::string symbol,std::map<std::string, std::vect
 
 void LLGrammar::computeFirstSets(bool print){
 
-	computeEpsilonSets();
+	if(!firstSetsComputed){
+		firstSetsComputed = true;
+		computeEpsilonSets();
 
-	for(int i = 0; i<nonTerminals.size(); i++){
-		if(firstSets.find(nonTerminals[i]) == firstSets.end()){
-			firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
+		firstSets["@"].insert("@");
+		for(int i = 0; i<terminals.size(); i++){
+			firstSets[terminals[i]].clear();
+			firstSets[terminals[i]].insert(terminals[i]);
+		}
+
+		for(int i = 0; i<nonTerminals.size(); i++){
+			if(firstSets.find(nonTerminals[i]) == firstSets.end()){
+				firstSets[nonTerminals[i]]=computeFirst(nonTerminals[i]);
+				if(!isLL1){
+					std::cout<<"First sets of productions for "<<nonTerminals[i]<<" are not dis-joint."<<std::endl;
+					//return;
+				}
+			}
 		}
 	}
-
-	for(int i = 0; i<terminals.size(); i++){
-		firstSets[terminals[i]].clear();
-		firstSets[terminals[i]].insert(terminals[i]);
-	}
-	firstSets["@"].insert("@");
-	if(print){
+	if(print && isLL1){
 		std::cout<<"First Set is  : "<<std::endl;
 		std::map<std::string, std::set<std::string> >::iterator it;
 		std::set<std::string>::iterator itSet;
-		for(it=firstSets.begin();it!=firstSets.end();it++){
-			std::cout<<(*it).first<<"\t->\t";
-			for(itSet=(*it).second.begin();itSet != (*it).second.end();itSet++){
+		for(int i = 0; i<terminals.size(); i++){
+			std::cout<<terminals[i]<<"\t->\t";
+			for(itSet=firstSets[terminals[i]].begin();itSet != firstSets[terminals[i]].end();itSet++){
+				std::cout<<(*itSet)<<"\t|\t";
+			}
+			std::cout<<std::endl;
+		}
+
+		for(int i = 0; i<nonTerminals.size(); i++){
+			std::cout<<nonTerminals[i]<<"\t->\t";
+			for(itSet=firstSets[nonTerminals[i]].begin();itSet != firstSets[nonTerminals[i]].end();itSet++){
 				std::cout<<(*itSet)<<"\t|\t";
 			}
 			std::cout<<std::endl;
@@ -361,55 +376,70 @@ void LLGrammar::computeFirstSets(bool print){
 }
 
 void LLGrammar::computeFollowSets(bool print){
-	std::map<std::string, std::vector<std::string> > tempFollowSets;
-	std::map<std::string, std::vector<std::string> >::iterator it;
-	std::vector<std::string> tempVector, bfsVector;
-	std::string symbol, _symbol; 
-	for(int i=0;i<nonTerminals.size();i++){
-		computeFollow(nonTerminals[i],tempFollowSets);
+	if(!isLL1){
+		std::cout<<"Grammar is not LL(1). Please make the grammar LL(1) before computing follow sets."<<std::endl;
+		return;
 	}
 
-	for(it=tempFollowSets.begin();it!=tempFollowSets.end();it++){
-		tempVector = (*it).second;
-		removeDuplicates(tempVector);
-		tempVector.erase(std::remove(tempVector.begin(), tempVector.end(), "@"), tempVector.end());
+	if(firstSetsComputed==false){
+		std::cout<<"Warning : First sets not computed. Computing first sets."<<std::endl;
+		computeFirstSets(false);
+		if(!isLL1){
+			return;
+		}
 	}
+	if(!followSetsComputed){
+		followSetsComputed = true;
+		std::map<std::string, std::vector<std::string> > tempFollowSets;
+		std::map<std::string, std::vector<std::string> >::iterator it;
+		std::vector<std::string> tempVector, bfsVector;;
+		std::string symbol, _symbol; 
+		for(int i=0;i<nonTerminals.size();i++){
+			computeFollow(nonTerminals[i],tempFollowSets);
+		}
 
-	for(it = tempFollowSets.begin(); it!=tempFollowSets.end(); it++ ){
-		tempVector = (*it).second;
-		std::map<std::string,bool> visited;
-		std::queue<std::string> q;
-		visited[(*it).first]=true;
-		for(int i=0; i < tempVector.size(); i++){
-			if(tempVector[i] == "$"){
-				followSets[(*it).first].insert("$");
-			}
-			if(tempVector[i].find("FIRST_") == 0 ){
-				symbol = tempVector[i].substr(6);
-				std::copy(firstSets[symbol].begin(), firstSets[symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
-			}else if ( tempVector[i].find("FOLLOW_") == 0 ){
-				symbol = tempVector[i].substr(7);
-				// Implementing BFS.
-				q.push(symbol);
-				while(!q.empty()){
-					symbol = q.front();
-					q.pop();
-					if(visited.find(symbol) != visited.end()){
-						continue;
-					}
-					visited[symbol] = true;
-					bfsVector = tempFollowSets[symbol];
-					for(int j=0;j<tempFollowSets[symbol].size(); j++){
+		for(it=tempFollowSets.begin();it!=tempFollowSets.end();it++){
+			tempVector = (*it).second;
+			removeDuplicates(tempVector);
+			tempVector.erase(std::remove(tempVector.begin(), tempVector.end(), "@"), tempVector.end());
+		}
+
+		for(it = tempFollowSets.begin(); it!=tempFollowSets.end(); it++ ){
+			tempVector = (*it).second;
+			std::map<std::string,bool> visited;
+			std::queue<std::string> q;
+			visited[(*it).first]=true;
+			for(int i=0; i < tempVector.size(); i++){
+				if(tempVector[i] == "$"){
+					followSets[(*it).first].insert("$");
+				}
+				if(tempVector[i].find("FIRST_") == 0 ){
+					symbol = tempVector[i].substr(6);
+					std::copy(firstSets[symbol].begin(), firstSets[symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
+				}else if ( tempVector[i].find("FOLLOW_") == 0 ){
+					symbol = tempVector[i].substr(7);
+					// Implementing BFS.
+					q.push(symbol);
+					while(!q.empty()){
+						symbol = q.front();
+						q.pop();
 						if(visited.find(symbol) != visited.end()){
-							if(tempFollowSets[symbol][j] == "$"){
-								followSets[(*it).first].insert("$");
-							}
-							if(tempFollowSets[symbol][j].find("FIRST_") == 0){
-								_symbol = tempFollowSets[symbol][j].substr(6);
-								std::copy(firstSets[_symbol].begin(), firstSets[_symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
-							}else if (tempFollowSets[symbol][j].find("FOLLOW_") == 0){
-								_symbol = tempFollowSets[symbol][j].substr(7);
-								q.push(_symbol);
+							continue;
+						}
+						visited[symbol] = true;
+						bfsVector = tempFollowSets[symbol];
+						for(int j=0;j<tempFollowSets[symbol].size(); j++){
+							if(visited.find(symbol) != visited.end()){
+								if(tempFollowSets[symbol][j] == "$"){
+									followSets[(*it).first].insert("$");
+								}
+								if(tempFollowSets[symbol][j].find("FIRST_") == 0){
+									_symbol = tempFollowSets[symbol][j].substr(6);
+									std::copy(firstSets[_symbol].begin(), firstSets[_symbol].end(), std::inserter(followSets[(*it).first], followSets[(*it).first].end()));
+								}else if (tempFollowSets[symbol][j].find("FOLLOW_") == 0){
+									_symbol = tempFollowSets[symbol][j].substr(7);
+									q.push(_symbol);
+								}
 							}
 						}
 					}
@@ -417,6 +447,7 @@ void LLGrammar::computeFollowSets(bool print){
 			}
 		}
 	}
+
 	if(print){
 		std::cout<<"Follow Set is  : "<<std::endl;
 	}
@@ -433,9 +464,35 @@ void LLGrammar::computeFollowSets(bool print){
 			std::cout<<std::endl;
 		}
 	}
+	std::set<std::string> firstSet,followSet;
+	for(int i=0; i < nonTerminals.size(); i++){
+		if(containsEpsilon(nonTerminals[i])){
+			followSet = getFollow(nonTerminals[i]);
+			firstSet = getFirst(nonTerminals[i]);
+			for(std::set<std::string>::iterator it = firstSet.begin(); it != firstSet.end(); it++){
+				if(followSet.find(*it)!=followSet.end()){				
+					std::cout<<"Terminal : "<<*it<<" is present in first sets and follow set of "<<nonTerminals[i]<<std::endl;
+					std::cout<<"First and Follow sets are not disjoint for "<<nonTerminals[i]<<"."<<std::endl;
+					isLL1 = false;
+					return;
+				}
+			}
+		}
+	}
 }
 
 void LLGrammar::parseTableConstruction(){
+	if(!isLL1){
+		std::cout<<"Grammar is not LL(1). Please make the grammar LL(1) before creating parse table."<<std::endl;
+		return;
+	}
+	if(followSetsComputed==false){
+		std::cout<<"Warning : Follow sets not computed. Computing follow sets."<<std::endl;
+		computeFollowSets(false);
+		if(!isLL1){
+			return;
+		}
+	}
 	int maxLengthProductions = 0, maxLengthSymbol = 0;
 	std::set<std::string> firstSet;
 	std::set<std::string> followSet ;

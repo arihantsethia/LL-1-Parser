@@ -22,6 +22,7 @@
 
 class LLGrammar{
 private:
+	bool isLL1,firstSetsComputed, followSetsComputed;
 	std::string startSymbol;
 	std::vector<std::string> terminals;
 	std::vector<std::string> nonTerminals;

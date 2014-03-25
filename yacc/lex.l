@@ -100,10 +100,10 @@ IS			(u|U|l|L)*
 0{D}+{IS}?				return NUMBER ;
 {D}+{IS}?				return NUMBER ;
 
-L?'(\\.|[^\\'])+'		return REAL ; 
-{D}+{E}{FS}?			return REAL ;
-{D}*"."{D}+({E})?{FS}?	return REAL ;
-{D}+"."{D}*({E})?{FS}?	return REAL ;
+L?'(\\.|[^\\'])+'		return NUMBER ; 
+{D}+{E}{FS}?			return NUMBER ;
+{D}*"."{D}+({E})?{FS}?	return NUMBER ;
+{D}+"."{D}*({E})?{FS}?	return NUMBER ;
 .						{ /* ignore bad characters */ }
 %%
 

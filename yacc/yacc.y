@@ -2,6 +2,7 @@
 	#include <stdio.h>
 	extern int yylex(void);
 	extern int yylineno ;
+	extern char* yytext ;
 	void yyerror(char *);
 %}
 
@@ -101,6 +102,6 @@ Factor:   	LP Expr RP
 %%
 
 void yyerror(char *s) {
-	fprintf(stderr, "Error at Line no. : %d, %s\n", yylineno,s);
+	fprintf(stderr, "Error at Line no. : %d, %s\n", yylineno,yytext);
 }
 
